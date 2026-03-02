@@ -33,10 +33,9 @@ const logError = (label: string, error: unknown) => {
 // ---------- controllers ----------
  
 // GET /tasks
-export const listTasks = async (_req: Request, res: Response) => {
-  console.log("➡️ GET /tasks");
+export const listTasks = async (req: Request, res: Response) => {
   try {
-    const tasks = await getTasks();
+    const tasks = await getTasks(req.user!.id, req.user!.role);
     res.json(tasks);
   } catch (error) {
     logError("LIST TASKS FAILED", error);
@@ -55,7 +54,13 @@ export const getTasksByStatusHandler = async (req: Request, res: Response) => {
       });
     }
  
-    const tasks = await getTasksByStatus(status);
+    // 🔐 ownership + RBAC applied
+    const tasks = await getTasksByStatus(
+      status,
+      req.user!.id,
+      req.user!.role
+    );
+ 
     res.json(tasks);
   } catch (error) {
     logError("GET TASKS BY STATUS FAILED", error);
@@ -74,7 +79,12 @@ export const getSingleTask = async (req: Request, res: Response) => {
       });
     }
  
-    const task = await getTaskById(parsed.data.id);
+    const task = await getTaskById(
+      parsed.data.id,
+      req.user!.id,
+      req.user!.role
+    );
+ 
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
     }
@@ -98,6 +108,7 @@ export const createSingleTask = async (req: Request, res: Response) => {
     }
  
     const task = await createTask(
+      req.user!.id, // 🔐 owner attached
       parsed.data.title,
       parsed.data.description,
       parsed.data.time
@@ -117,12 +128,16 @@ export const updateSingleTask = async (req: Request, res: Response) => {
     const bodyParsed = updateTaskSchema.safeParse(req.body);
  
     if (!idParsed.success || !bodyParsed.success) {
-      return res.status(400).json({
-        message: "Validation failed",
-      });
+      return res.status(400).json({ message: "Validation failed" });
     }
  
-    const updated = await updateTask(idParsed.data.id, bodyParsed.data);
+    const updated = await updateTask(
+      idParsed.data.id,
+      req.user!.id,
+      req.user!.role,
+      bodyParsed.data
+    );
+ 
     if (!updated) {
       return res.status(404).json({ message: "Task not found" });
     }
@@ -144,9 +159,12 @@ export const updateTaskStatus = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Validation failed" });
     }
  
-    const updated = await updateTask(idParsed.data.id, {
-      status: statusParsed.data.status,
-    });
+    const updated = await updateTask(
+      idParsed.data.id,
+      req.user!.id,
+      req.user!.role,
+      { status: statusParsed.data.status }
+    );
  
     if (!updated) {
       return res.status(404).json({ message: "Task not found" });
@@ -164,12 +182,15 @@ export const deleteSingleTask = async (req: Request, res: Response) => {
   try {
     const parsed = idParamSchema.safeParse(req.params);
     if (!parsed.success) {
-      return res.status(400).json({
-        message: "Invalid task ID",
-      });
+      return res.status(400).json({ message: "Invalid task ID" });
     }
  
-    const deleted = await deleteTaskById(parsed.data.id);
+    const deleted = await deleteTaskById(
+      parsed.data.id,
+      req.user!.id,
+      req.user!.role
+    );
+ 
     if (!deleted) {
       return res.status(404).json({ message: "Task not found" });
     }
