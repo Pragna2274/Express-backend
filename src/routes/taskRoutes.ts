@@ -8,28 +8,29 @@ import {
   updateSingleTask,
   updateTaskStatus,
 } from "../controllers/taskController";
-
+import { authMiddleware } from "../middlewares/authMiddleware";
 const taskRouter = Router();
-
+ 
+taskRouter.use(authMiddleware); //
 // GET all tasks
 taskRouter.get("/", listTasks);
-
+ 
 // GET tasks by status (todo, inprogress, done)
 taskRouter.get("/status/:status", getTasksByStatusHandler);
-
+ 
 // GET single task by ID
 taskRouter.get("/:id", getSingleTask);
-
+ 
 // POST create new task
 taskRouter.post("/", createSingleTask);
-
+ 
 // PUT update task (all fields)
 taskRouter.put("/:id", updateSingleTask);
-
+ 
 // PATCH update task status only
 taskRouter.patch("/:id/status", updateTaskStatus);
-
+ 
 // DELETE task
 taskRouter.delete("/:id", deleteSingleTask);
-
+ 
 export default taskRouter;

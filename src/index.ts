@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import taskRouter from "./routes/taskRoutes";
 import connectDB from "./connection";
+import authRouter from "./routes/authRoutes";
 
 dotenv.config();
 
@@ -13,7 +14,7 @@ app.use(express.json());
 app.get("/", (_req: Request, res: Response) => {
   res.json({ message: "Todo API is running" });
 });
-
+app.use("/auth", authRouter);
 app.use("/tasks", taskRouter);
 
 // 🔥 START SERVER ONLY AFTER DB CONNECTS

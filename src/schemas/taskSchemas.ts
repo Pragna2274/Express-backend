@@ -40,6 +40,11 @@ export const idParamSchema = z.object({
 // ----------------- MONGOOSE MODEL -----------------
  
 const TaskMongoSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
   title: { type: String, required: true },
   description: { type: String, required: true },
   time: { type: String, required: true },
@@ -51,6 +56,5 @@ const TaskMongoSchema = new mongoose.Schema({
     default: "todo",
   },
 });
- 
 export const TaskModel =
   mongoose.models.Task || mongoose.model("Task", TaskMongoSchema);

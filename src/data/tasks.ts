@@ -2,62 +2,83 @@ import { TaskStatus } from "../types/task";
 import { TaskModel } from "../schemas/taskSchemas";
  
 // GET all tasks
-export const getTasks = async () => {
-  return await TaskModel.find().sort({ createdAt: -1 });
+export const getTasks = async (userId: string, role: string) => {
+  if (role === "admin") {
+    return TaskModel.find();
+  }
+  return TaskModel.find({ userId });
 };
  
 // GET task by ID
-export const getTaskById = async (id: string) => {
-  return await TaskModel.findById(id);
+export const getTaskById = async (
+  taskId: string,
+  userId: string,
+  role: string
+) => {
+  if (role === "admin") {
+    return TaskModel.findById(taskId);
+  }
+  return TaskModel.findOne({ _id: taskId, userId });
 };
  
 // CREATE task
 export const createTask = async (
+  userId: string,
   title: string,
   description: string,
   time: string
 ) => {
-  const [hours, minutes] = time.split(":").map(Number);
- 
-  return await TaskModel.create({
+  return TaskModel.create({
+    userId,
     title,
     description,
     time,
-    duration: hours * 60 + minutes,
-    status: "todo",
+    duration: 0,
   });
 };
  
 // UPDATE task
 export const updateTask = async (
-  id: string,
-  updates: {
-    title?: string;
-    description?: string;
-    time?: string;
-    status?: TaskStatus;
-  }
+  taskId: string,
+  userId: string,
+  role: string,
+  updates: any
 ) => {
-  const updatedData: any = { ...updates };
- 
-  if (updates.time) {
-    const [hours, minutes] = updates.time.split(":").map(Number);
-    updatedData.duration = hours * 60 + minutes;
+  if (role === "admin") {
+    return TaskModel.findByIdAndUpdate(taskId, updates, { new: true });
   }
- 
-  return await TaskModel.findByIdAndUpdate(
-    id,
-    updatedData,
-    { returnDocument: "after" }
+  return TaskModel.findOneAndUpdate(
+    { _id: taskId, userId },
+    updates,
+    { new: true }
   );
 };
  
 // DELETE task
-export const deleteTaskById = async (id: string) => {
-  return await TaskModel.findByIdAndDelete(id);
+export const deleteTaskById = async (
+  taskId: string,
+  userId: string,
+  role: string
+) => {
+  if (role === "admin") {
+    return TaskModel.findByIdAndDelete(taskId);
+  }
+  return TaskModel.findOneAndDelete({ _id: taskId, userId });
 };
  
 // GET tasks by status
-export const getTasksByStatus = async (status: TaskStatus) => {
-  return await TaskModel.find({ status }).sort({ createdAt: -1 });
+// GET tasks by status (RBAC-aware)
+export const getTasksByStatus = async (
+  status: TaskStatus,
+  userId: string,
+  role: string
+) => {
+  if (role === "admin") {
+    return TaskModel.find({ status }).sort({ createdAt: -1 });
+  }
+ 
+  return TaskModel.find({
+    status,
+    userId,
+  }).sort({ createdAt: -1 });
 };
